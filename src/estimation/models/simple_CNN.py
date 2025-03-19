@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from einops import rearrange
 
 from ..layers.feedforward import FeedForward
 
@@ -15,9 +16,16 @@ class SimpleCNN(nn.Module):
         self.conv1 = nn.Conv2d(16, 32, kernel_size=3, padding='same')
         self.pool1 = nn.AvgPool2d(2,2)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding='same')
-        self.pool2 = nn.AvgPool2d(2,2)
+        self.pool2 = nn.AvgPool2d(4,4)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding='same')
+        self.pool3 = nn.AvgPool2d(5,5)
 
-        self.ff = FeedForward(64*50*50, 100, 4)
+        self.fc1 = nn.Linear(128, 32)
+        self.fc2 = nn.Linear(800, 400)
+        self.fc3 = nn.Linear(400, 83)
+
+        self.sm = nn.Softmax(dim=1)
+        
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         h = F.relu(self.in_ref(x))
@@ -25,7 +33,13 @@ class SimpleCNN(nn.Module):
         h = self.pool1(h)
         h = F.relu(self.conv2(h))
         h = self.pool2(h)
-        h = h.view(-1, 64*50*50)
-        h = self.ff(h)
+        h = F.relu(self.conv3(h))
+        h = self.pool3(h)
 
-        return h
+        h = rearrange(h, 'b c h w -> b h w c')
+        h = F.silu(self.fc1(h))
+        h = h.view(-1, 5*5*32)
+        h = F.silu(self.fc2(h))
+        h = F.silu(self.fc3(h))
+
+        return self.sm(h)

@@ -7,24 +7,26 @@ import os
 import argparse
 
 from ...models.simple_CNN import SimpleCNN
+from ...utils.datasets import UTKFace
 
 def train(
         weights_path: str,
         model_weights: str = None,
         optim_weights: str = None,
-        batch_size: int = 64,
-        epochs: int = 50,
+        batch_size: int = 128,
+        epochs: int = 100,
         lr = 2e-5
 ):
     # Set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f'Device: {device}')
     
     # Initialize dataset
-    train_dataset = None    # PLACEHOLDER
+    train_dataset = UTKFace('./data/UTKFace/utkface_aligned_cropped/UTKFace')
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
 
     # Initialize model and optimizer
-    model = SimpleCNN()
+    model = SimpleCNN().to(device)
     optim = Adam(model.parameters(), lr=lr)
 
     # Load checkpoints if present
@@ -46,11 +48,12 @@ def train(
     # Training routine
     for i in range(epochs):
         total_loss = 0
-        for labels, x in enumerate(tqdm(train_loader, desc=f'Epoch {i+1}/{epochs}')):
+        for _, (labels, x) in enumerate(tqdm(train_loader, desc=f'Epoch {i+1}/{epochs}')):
             # Zero gradients
             optim.zero_grad()
 
             x = x.to(device)
+            labels = labels.to(device)
             pred = model(x)
 
             # Compute loss & backpropagate
