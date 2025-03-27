@@ -32,5 +32,5 @@ class ResLayer(nn.Module):
         if hasattr(self, 'norm'):
             h1 = self.norm(h1)
         h1 = self.dropout(h1)
-        h2 = F.relu(self.conv2)
+        h2 = F.relu(self.conv2(h1))
         return h2 + self.skip(x)
