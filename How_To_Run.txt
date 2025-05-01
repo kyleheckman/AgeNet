@@ -1,0 +1,3 @@
+cd "C:\Users\matth\Desktop\AgeNet-main"
+
+python src\estimation\training\resnet\train.py --utk_data "data/UTKFace" --custom_data "data/custom_faces" --weights "src/estimation/weights/resnet_trained_custom" --epochs 50 --batch_size 64 --lr 1e-5
